@@ -6,24 +6,13 @@ import path from "path";
 import { execFile } from "child_process";
 import OpenAI from "openai";
 
+
 const app = express();
 
 
-// =======================
-// CORS
-// =======================
-
 app.use(
   cors({
-    origin: "*",
-    methods: [
-      "GET",
-      "POST",
-      "OPTIONS"
-    ],
-    allowedHeaders: [
-      "Content-Type"
-    ]
+    origin: "*"
   })
 );
 
@@ -32,68 +21,49 @@ app.use(express.json());
 
 
 
-// =======================
-// 上传配置
-// =======================
-
 const upload = multer({
-
   dest: "/tmp/uploads/"
-
 });
 
 
 
-// =======================
-// AI
-// =======================
-
 const openai = new OpenAI({
 
-  apiKey:
-  process.env.OPENAI_API_KEY
+  apiKey: process.env.OPENAI_API_KEY
 
 });
 
 
 const deepseek = new OpenAI({
 
-  apiKey:
-  process.env.DEEPSEEK_API_KEY,
+  apiKey: process.env.DEEPSEEK_API_KEY,
 
-  baseURL:
-  "https://api.deepseek.com"
+  baseURL: "https://api.deepseek.com"
 
 });
 
 
 
-const AI_PROVIDER =
+const provider =
 process.env.AI_PROVIDER || "deepseek";
 
 
 
 
 
-// =======================
-// 首页
-// =======================
+// 测试接口
 
-app.get("/",(req,res)=>{
+app.get("/", (req,res)=>{
 
-res.json({
+  res.json({
 
-status:"ok",
+    status:"ok",
 
-version:"5.0",
+    version:"5.1",
 
-provider:
-AI_PROVIDER,
+    provider:provider
 
-message:
-"AI Movie Studio V5 Running"
-
-});
+  });
 
 });
 
@@ -101,79 +71,55 @@ message:
 
 
 
-// =======================
-// FFmpeg 提取音频
-// =======================
+
+// 提取音频
+
+function extractAudio(input,output){
+
+  return new Promise((resolve,reject)=>{
 
 
-function extractAudio(
+    execFile(
 
-input,
+      "ffmpeg",
 
-output
+      [
 
-){
+        "-y",
 
+        "-i",
 
-return new Promise(
+        input,
 
-(resolve,reject)=>{
+        "-vn",
 
+        "-ac",
 
-execFile(
+        "1",
 
-"ffmpeg",
+        output
 
-[
-
-"-y",
-
-"-i",
-
-input,
-
-"-vn",
-
-"-ac",
-
-"1",
-
-"-ar",
-
-"16000",
-
-output
-
-],
+      ],
 
 
-(error)=>{
+      (err)=>{
+
+        if(err){
+
+          reject(err);
+
+        }else{
+
+          resolve();
+
+        }
+
+      }
+
+    );
 
 
-if(error){
-
-reject(error);
-
-return;
-
-}
-
-
-resolve();
-
-
-}
-
-
-);
-
-
-
-}
-
-
-);
-
+  });
 
 }
 
@@ -181,97 +127,66 @@ resolve();
 
 
 
+// 视频截图
+
+function extractFrames(video,dir){
+
+  return new Promise((resolve,reject)=>{
 
 
-// =======================
-// FFmpeg 视频抽帧
-// =======================
+    if(!fs.existsSync(dir)){
 
+      fs.mkdirSync(dir,{
+        recursive:true
+      });
 
-function extractFrames(
-
-videoPath,
-
-outputDir
-
-){
-
-
-return new Promise(
-
-(resolve,reject)=>{
-
-
-if(!fs.existsSync(outputDir)){
-
-fs.mkdirSync(
-outputDir,
-{
-recursive:true
-}
-);
-
-}
+    }
 
 
 
-execFile(
+    execFile(
 
-"ffmpeg",
+      "ffmpeg",
 
-[
+      [
 
-"-y",
+        "-y",
 
-"-i",
+        "-i",
 
-videoPath,
+        video,
 
+        "-vf",
 
-"-vf",
+        "fps=1/5",
 
-"fps=1/5",
+        path.join(
+          dir,
+          "frame-%03d.jpg"
+        )
 
-
-path.join(
-
-outputDir,
-
-"frame-%03d.jpg"
-
-)
+      ],
 
 
-],
+      (err)=>{
+
+        if(err){
+
+          reject(err);
+
+        }else{
+
+          resolve();
+
+        }
+
+      }
 
 
-(error)=>{
+    );
 
 
-if(error){
-
-reject(error);
-
-return;
-
-}
-
-
-resolve();
-
-}
-
-
-
-);
-
-
-
-}
-
-
-);
-
+  });
 
 }
 
@@ -279,89 +194,53 @@ resolve();
 
 
 
-// =======================
-// 获取图片列表
-// =======================
+// AI生成文字
+
+async function generateScript(text){
 
 
-function getImages(dir){
+  if(provider==="openai"){
 
 
-return fs.readdirSync(dir)
+    const result =
+    await openai.responses.create({
 
-.filter(
+      model:"gpt-4.1-mini",
 
-file=>
+      input:text
 
-file.endsWith(".jpg")
-
-)
-
-.map(
-
-file=>
-
-path.join(
-dir,
-file
-)
-
-);
+    });
 
 
-// =======================
-// AI 文本生成
-// =======================
-
-async function generateText(prompt){
+    return result.output_text;
 
 
-if(AI_PROVIDER==="openai"){
-
-
-const result =
-await openai.responses.create({
-
-model:
-"gpt-4.1-mini",
-
-input:
-prompt
-
-});
-
-
-return result.output_text;
-
-
-}
+  }
 
 
 
-const result =
-await deepseek.chat.completions.create({
+  const result =
+  await deepseek.chat.completions.create({
 
-model:
-"deepseek-chat",
+    model:"deepseek-chat",
 
+    messages:[
 
-messages:[
+      {
 
-{
+        role:"user",
 
-role:"user",
+        content:text
 
-content:prompt
+      }
 
-}
+    ]
 
-]
-
-
-});
+  });
 
 
-return result.choices[0].message.content;
+
+  return result.choices[0].message.content;
 
 
 }
@@ -371,10 +250,8 @@ return result.choices[0].message.content;
 
 
 
-// =======================
+
 // 视频分析接口
-// =======================
-
 
 app.post(
 
@@ -386,12 +263,6 @@ upload.single("video"),
 async(req,res)=>{
 
 
-console.log(
-"收到视频"
-);
-
-
-
 try{
 
 
@@ -399,8 +270,7 @@ if(!req.file){
 
 return res.status(400).json({
 
-error:
-"没有上传视频"
+error:"没有视频"
 
 });
 
@@ -408,15 +278,19 @@ error:
 
 
 
+console.log(
+"收到视频:",
+req.file.originalname
+);
+
+
 
 const videoPath =
 req.file.path;
 
 
-
 const audioPath =
 videoPath+".mp3";
-
 
 
 const frameDir =
@@ -425,12 +299,8 @@ videoPath+"_frames";
 
 
 
-// 1. 提取声音
 
-
-console.log(
-"提取音频"
-);
+console.log("提取音频");
 
 
 await extractAudio(
@@ -444,12 +314,7 @@ audioPath
 
 
 
-// 2. 截取画面
-
-
-console.log(
-"抽取视频画面"
-);
+console.log("抽取画面");
 
 
 await extractFrames(
@@ -462,40 +327,18 @@ frameDir
 
 
 
-const frames =
-getImages(frameDir);
 
 
-
-console.log(
-
-"截图数量:",
-
-frames.length
-
-);
+console.log("语音识别");
 
 
-
-
-// 3. 语音识别
-
-
-console.log(
-"语音识别"
-);
-
-
-const transcription =
+const speech =
 
 await openai.audio.transcriptions.create({
 
 file:
 
-fs.createReadStream(
-audioPath
-),
-
+fs.createReadStream(audioPath),
 
 model:
 
@@ -504,116 +347,52 @@ model:
 });
 
 
+
 const transcript =
-transcription.text;
+speech.text;
 
 
 
 
 
-// 4. 生成视觉描述
 
-let visualInfo =
-"";
-
-
-
-if(frames.length){
-
-
-visualInfo =
-`
-
-视频画面数量：
-
-${frames.length}
-
-请结合视频画面理解剧情。
-
-`;
-
-
-
-}
-
-
-
-
-// 5. 生成解说稿
-
-
-console.log(
-"生成解说稿"
-);
+console.log("生成解说");
 
 
 
 const script =
 
-await generateText(
+await generateScript(
 
 `
 
-你是一名百万播放电影解说作者。
-
-根据下面信息生成短视频解说稿。
+你是一个百万播放电影解说作者。
 
 
-【对白】
+根据下面内容生成短视频解说：
 
 ${transcript}
 
 
+输出：
 
-【画面信息】
+1. 三个爆款标题
 
-${visualInfo}
+2. 三秒开场钩子
 
+3. 60秒电影解说稿
 
-
-要求：
-
-生成：
-
-1. 爆款标题3个
-
-2. 开头3秒钩子
-
-3. 60-90秒电影解说稿
-
-4. 字幕短句版本
+4. 字幕短句
 
 
 要求：
 
-符合短视频节奏。
-
-突出冲突、悬念、反转。
+节奏快，有悬念。
 
 不要虚构剧情。
 
-
 `
 
-);
-
-
-
-
-
-
-// 清理文件
-
-
-fs.unlink(
-videoPath,
-()=>{}
-);
-
-
-fs.unlink(
-audioPath,
-()=>{}
 );
 
 
@@ -625,42 +404,28 @@ res.json({
 success:true,
 
 
-filename:
-req.file.originalname,
+
+transcript:transcript,
 
 
-transcript,
-
-
-script,
-
-
-frames:
-frames.length
-
+script:script
 
 });
 
 
 
-
 }
+
 
 catch(error){
 
 
-console.error(
-
-error
-
-);
-
+console.error(error);
 
 
 res.status(500).json({
 
-error:
-error.message
+error:error.message
 
 });
 
@@ -668,6 +433,7 @@ error.message
 }
 
 
+
 }
 
 );
@@ -675,12 +441,6 @@ error.message
 
 
 
-
-
-
-// =======================
-// 启动服务器
-// =======================
 
 
 const PORT =
@@ -694,15 +454,13 @@ PORT,
 
 ()=>{
 
-
 console.log(
 
-"AI Movie Studio V5 running on "+
+"AI Movie Studio V5.1 running on "+
 PORT
 
 );
-  
+
+}
 
 );
-}
-console.log("SERVER FILE LOADED");
