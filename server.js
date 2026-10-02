@@ -19,7 +19,6 @@ app.get("/", (req, res) => {
 });
 
 app.post("/api/generate-script", async (req, res) => {
-
   try {
 
     const {
@@ -35,9 +34,10 @@ app.post("/api/generate-script", async (req, res) => {
     }
 
     const prompt = `
-你现在是一名专业的中文电影解说编剧。
+你是一名专业的中文电影解说编剧。
 
-请根据下面的电影信息，创作一篇适合短视频平台的电影解说稿。
+请根据下面提供的电影信息，
+生成一篇适合短视频平台的电影解说稿。
 
 电影信息：
 ${movieInfo}
@@ -45,21 +45,19 @@ ${movieInfo}
 解说风格：
 ${style}
 
-目标长度：
+目标时长：
 ${duration}
 
 要求：
 
-1. 开头3秒必须制造悬念。
-2. 不要写成影评，要像真正的电影故事解说。
-3. 剧情必须按照故事发展顺序。
-4. 语言口语化、容易听懂。
-5. 每隔一段制造一个悬念。
-6. 不要虚构电影中不存在的重要剧情。
-7. 最后形成完整的故事闭环。
-8. 输出纯中文解说稿，不要解释你的创作过程。
-
-请直接输出最终解说稿。
+1. 开头迅速制造悬念。
+2. 语言口语化。
+3. 按照剧情发展讲述。
+4. 保留重要人物和关键事件。
+5. 不要虚构不存在的剧情。
+6. 每隔一段制造新的悬念。
+7. 最终形成完整故事。
+8. 只输出解说稿，不要解释创作过程。
 `;
 
     const response = await client.responses.create({
@@ -78,15 +76,14 @@ ${duration}
 
     res.status(500).json({
       success: false,
-      error: "AI生成失败"
+      error: error.message || "AI生成失败"
     });
 
   }
-
 });
 
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`AI Movie Studio server running on port ${PORT}`);
+  console.log(`AI Movie Studio running on port ${PORT}`);
 });
