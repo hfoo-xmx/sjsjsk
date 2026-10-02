@@ -18,12 +18,14 @@ const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
+
 function runFFmpeg(input, output) {
 
   return new Promise((resolve, reject) => {
 
     execFile(
       "ffmpeg",
+
       [
         "-y",
         "-i",
@@ -35,13 +37,19 @@ function runFFmpeg(input, output) {
         "16000",
         "-c:a",
         "mp3",
+        "-b:a",
+        "64k",
         output
       ],
+
       (error, stdout, stderr) => {
 
         if (error) {
+
           console.error(stderr);
+
           reject(error);
+
           return;
         }
 
@@ -58,9 +66,14 @@ function runFFmpeg(input, output) {
 app.get("/", (req, res) => {
 
   res.json({
+
     status: "ok",
+
     version: "3.0",
-    message: "AI Movie Studio 视频分析服务器运行正常"
+
+    message:
+      "AI Movie Studio V3 正常运行"
+
   });
 
 });
@@ -68,10 +81,13 @@ app.get("/", (req, res) => {
 
 app.post(
   "/api/analyze-video",
+
   upload.single("video"),
+
   async (req, res) => {
 
     let videoPath = null;
+
     let audioPath = null;
 
     try {
@@ -79,43 +95,61 @@ app.post(
       if (!req.file) {
 
         return res.status(400).json({
-          error: "没有收到视频"
+
+          error:
+            "没有收到视频文件"
+
         });
 
       }
 
-      videoPath = req.file.path;
+
+      videoPath =
+        req.file.path;
+
 
       audioPath =
         `${videoPath}.mp3`;
 
+
       console.log(
-        "开始处理：",
+        "收到视频：",
         req.file.originalname
       );
 
 
       /*
-       * 第一步：
-       * 使用 FFmpeg 从电影中提取音频
+       * 1.
+       * 提取视频音频
        */
 
       await runFFmpeg(
+
         videoPath,
+
         audioPath
+
+      );
+
+
+      console.log(
+        "音频提取完成"
       );
 
 
       /*
-       * 第二步：
-       * 上传音频给语音识别模型
+       * 2.
+       * AI语音转文字
        */
 
       const transcription =
+
         await client.audio.transcriptions.create({
 
           file:
-            fs.createReadStream(audioPath),
+            fs.createReadStream(
+              audioPath
+            ),
 
           model:
             "gpt-4o-transcribe"
@@ -127,37 +161,60 @@ app.post(
         transcription.text;
 
 
+      console.log(
+        "语音识别完成"
+      );
+
+
       /*
-       * 第三步：
-       * AI 根据对白生成剧情总结
+       * 3.
+       * AI分析剧情
        */
 
+      const prompt = `
+
+你是一名专业电影剧情分析师。
+
+下面是一段电影/短剧的对白转写：
+
+${transcript}
+
+请分析这段内容。
+
+输出：
+
+【主要人物】
+列出主要人物及身份。
+
+【故事发展】
+按照时间顺序整理剧情。
+
+【主要冲突】
+说明故事核心矛盾。
+
+【关键转折】
+找出重要反转或剧情变化。
+
+【结局】
+如果提供的内容包含结局，请说明结局。
+
+【解说素材】
+整理成适合电影解说使用的剧情素材。
+
+不要虚构原文没有的信息。
+
+`;
+
+
       const response =
+
         await client.responses.create({
 
           model:
             "gpt-6-luna",
 
-          input: `
-
-你是一名专业电影剧情分析师。
-
-下面是一部电影的语音转写：
-
-${transcript}
-
-请完成：
-
-1. 提取主要人物
-2. 梳理故事时间线
-3. 找出主要冲突
-4. 找出关键反转
-5. 总结电影结局
-6. 输出一份完整剧情摘要
-
-不要虚构原文没有的信息。
-
-`
+          input:
+            prompt
 
         });
 
@@ -167,6 +224,7 @@ ${transcript}
 
 
       /*
+       * 4.
        * 清理临时文件
        */
 
@@ -175,11 +233,17 @@ ${transcript}
         () => {}
       );
 
+
       fs.unlink(
         audioPath,
         () => {}
       );
 
+
+      /*
+       * 5.
+       * 返回结果
+       */
 
       res.json({
 
@@ -195,12 +259,14 @@ ${transcript}
       });
 
 
-    } catch(error) {
+    }
+
+    catch(error) {
 
       console.error(error);
 
 
-      if(videoPath){
+      if(videoPath) {
 
         fs.unlink(
           videoPath,
@@ -210,7 +276,7 @@ ${transcript}
       }
 
 
-      if(audioPath){
+      if(audioPath) {
 
         fs.unlink(
           audioPath,
@@ -241,12 +307,17 @@ const PORT =
 
 
 app.listen(
+
   PORT,
+
   () => {
 
     console.log(
-      `AI Movie Studio running on ${PORT}`
+
+      `AI Movie Studio V3 running on ${PORT}`
+
     );
 
   }
+
 );
