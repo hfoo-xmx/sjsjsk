@@ -12,31 +12,35 @@ const app = express();
 // CORS
 // =======================
 
-app.use(cors({
-  origin: "*",
-  methods: [
-    "GET",
-    "POST",
-    "OPTIONS"
-  ],
-  allowedHeaders: [
-    "Content-Type"
-  ]
-}));
-
-app.options("*", cors());
+app.use(
+  cors({
+    origin: "*",
+    methods: [
+      "GET",
+      "POST",
+      "OPTIONS"
+    ],
+    allowedHeaders: [
+      "Content-Type"
+    ]
+  })
+);
 
 
 app.use(express.json());
 
 
+
 // =======================
-// 文件上传
+// 上传配置
 // =======================
 
 const upload = multer({
+
   dest: "/tmp/uploads/"
+
 });
+
 
 
 // =======================
@@ -53,19 +57,19 @@ const client = new OpenAI({
 
 
 // =======================
-// 测试接口
+// 首页测试
 // =======================
 
-app.get("/", (req,res)=>{
+app.get("/", (req, res) => {
 
   res.json({
 
-    status:"ok",
+    status: "ok",
 
-    version:"3.0",
+    version: "3.0",
 
     message:
-    "AI Movie Studio Backend Running"
+      "AI Movie Studio Backend Running"
 
   });
 
@@ -74,78 +78,81 @@ app.get("/", (req,res)=>{
 
 
 // =======================
-// FFmpeg 提取音频
+// FFmpeg
 // =======================
 
-function runFFmpeg(input, output){
+function extractAudio(
+  input,
+  output
+){
 
-  return new Promise((resolve,reject)=>{
-
-
-    execFile(
-
-      "ffmpeg",
-
-      [
-
-        "-y",
-
-        "-i",
-
-        input,
-
-        "-vn",
-
-        "-ac",
-
-        "1",
-
-        "-ar",
-
-        "16000",
-
-        "-c:a",
-
-        "mp3",
-
-        output
-
-      ],
+  return new Promise(
+    (resolve, reject)=>{
 
 
-      (error,stdout,stderr)=>{
+      execFile(
+
+        "ffmpeg",
+
+        [
+
+          "-y",
+
+          "-i",
+
+          input,
+
+          "-vn",
+
+          "-ac",
+
+          "1",
+
+          "-ar",
+
+          "16000",
+
+          "-c:a",
+
+          "mp3",
+
+          output
+
+        ],
 
 
-        if(error){
+        (error, stdout, stderr)=>{
 
-          console.error(
-            "FFmpeg error:",
-            stderr
-          );
 
-          reject(error);
+          if(error){
 
-          return;
+            console.error(
+              stderr
+            );
+
+            reject(error);
+
+            return;
+
+          }
+
+
+          resolve();
 
         }
 
-
-        resolve();
-
-      }
-
-    );
+      );
 
 
-  });
-
+    }
+  );
 
 }
 
 
 
 // =======================
-// 视频分析接口
+// 视频分析
 // =======================
 
 app.post(
@@ -159,7 +166,7 @@ async(req,res)=>{
 
 
 console.log(
-  "收到 /api/analyze-video 请求"
+  "收到视频分析请求"
 );
 
 
@@ -170,12 +177,12 @@ try{
 if(!req.file){
 
 
- return res.status(400).json({
+return res.status(400).json({
 
-   error:
-   "没有收到视频文件"
+error:
+"没有收到视频"
 
- });
+});
 
 
 }
@@ -183,14 +190,11 @@ if(!req.file){
 
 
 console.log(
- "文件:",
- req.file.originalname
-);
 
+"文件:",
 
-console.log(
- "大小:",
- req.file.size
+req.file.originalname
+
 );
 
 
@@ -204,34 +208,34 @@ videoPath + ".mp3";
 
 
 
-// 1. 提取声音
+// 1 FFmpeg
 
 console.log(
- "开始 FFmpeg"
+"正在提取音频"
 );
 
 
-await runFFmpeg(
+await extractAudio(
 
- videoPath,
+videoPath,
 
- audioPath
+audioPath
 
 );
 
 
 console.log(
- "音频完成"
+"音频提取完成"
 );
 
 
 
-
-// 2. 语音识别
+// 2 转文字
 
 console.log(
- "开始转文字"
+"开始AI转文字"
 );
+
 
 
 const transcription =
@@ -241,14 +245,13 @@ await client.audio.transcriptions.create({
 file:
 
 fs.createReadStream(
- audioPath
+audioPath
 ),
 
 
 model:
 
 "gpt-4o-transcribe"
-
 
 });
 
@@ -260,20 +263,18 @@ transcription.text;
 
 
 console.log(
- "转文字完成"
+"文字生成完成"
 );
 
 
 
 
+// 3 剧情分析
 
-// 3. 剧情分析
 
-
-const result =
+const aiResponse =
 
 await client.responses.create({
-
 
 model:
 
@@ -283,37 +284,39 @@ model:
 input:
 
 `
-你是一名电影解说专家。
+你是一名专业电影解说作者。
 
-根据下面的对白内容：
+请根据下面的对白内容生成电影解说分析：
 
 ${transcript}
 
 
-生成：
+输出：
 
-1. 故事简介
-2. 主要人物
-3. 冲突
-4. 关键剧情
-5. 适合短视频解说的稿子
+【故事简介】
 
-不要编造不存在的信息。
+【主要人物】
+
+【剧情发展】
+
+【核心冲突】
+
+【适合短视频解说稿】
+
+不要添加原文没有的信息。
 `
 
 });
 
 
 
-
 const summary =
-result.output_text;
+aiResponse.output_text;
 
 
 
 
 // 删除临时文件
-
 
 fs.unlink(
 videoPath,
@@ -328,6 +331,8 @@ audioPath,
 
 
 
+
+// 返回结果
 
 res.json({
 
@@ -349,10 +354,7 @@ transcript,
 
 summary
 
-
 });
-
-
 
 
 }
@@ -361,8 +363,11 @@ catch(error){
 
 
 console.error(
+
 "服务器错误:",
+
 error
+
 );
 
 
@@ -372,6 +377,7 @@ res.status(500).json({
 success:false,
 
 error:
+
 error.message
 
 });
@@ -387,13 +393,13 @@ error.message
 
 
 
-
 // =======================
 // 启动
 // =======================
 
 
 const PORT =
+
 process.env.PORT || 3000;
 
 
@@ -401,6 +407,7 @@ process.env.PORT || 3000;
 app.listen(
 
 PORT,
+
 
 ()=>{
 
