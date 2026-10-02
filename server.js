@@ -8,19 +8,21 @@ import OpenAI from "openai";
 const app = express();
 
 
-// =======================
-// CORS
-// =======================
+/*
+========================
+CORS
+========================
+*/
 
 app.use(
   cors({
-    origin: "*",
-    methods: [
+    origin:"*",
+    methods:[
       "GET",
       "POST",
       "OPTIONS"
     ],
-    allowedHeaders: [
+    allowedHeaders:[
       "Content-Type"
     ]
   })
@@ -31,129 +33,227 @@ app.use(express.json());
 
 
 
-// =======================
-// 上传配置
-// =======================
+/*
+========================
+上传
+========================
+*/
 
-const upload = multer({
+const upload =
+multer({
+  dest:"/tmp/uploads/"
+});
 
-  dest: "/tmp/uploads/"
+
+
+/*
+========================
+AI PROVIDER
+========================
+*/
+
+
+const aiProvider =
+process.env.AI_PROVIDER || "deepseek";
+
+
+
+const openai =
+new OpenAI({
+
+apiKey:
+process.env.OPENAI_API_KEY
 
 });
 
 
 
-// =======================
-// OpenAI
-// =======================
+const deepseek =
+new OpenAI({
 
-const client = new OpenAI({
+apiKey:
+process.env.DEEPSEEK_API_KEY,
 
-  apiKey:
-    process.env.OPENAI_API_KEY
-
-});
-
-
-
-// =======================
-// 首页测试
-// =======================
-
-app.get("/", (req, res) => {
-
-  res.json({
-
-    status: "ok",
-
-    version: "3.0",
-
-    message:
-      "AI Movie Studio Backend Running"
-
-  });
+baseURL:
+"https://api.deepseek.com"
 
 });
 
 
 
-// =======================
-// FFmpeg
-// =======================
-
-function extractAudio(
-  input,
-  output
-){
-
-  return new Promise(
-    (resolve, reject)=>{
 
 
-      execFile(
-
-        "ffmpeg",
-
-        [
-
-          "-y",
-
-          "-i",
-
-          input,
-
-          "-vn",
-
-          "-ac",
-
-          "1",
-
-          "-ar",
-
-          "16000",
-
-          "-c:a",
-
-          "mp3",
-
-          output
-
-        ],
+async function generateText(prompt){
 
 
-        (error, stdout, stderr)=>{
+if(aiProvider==="openai"){
 
 
-          if(error){
+const result =
+await openai.responses.create({
 
-            console.error(
-              stderr
-            );
+model:
+"gpt-4.1-mini",
 
-            reject(error);
+input:
+prompt
 
-            return;
-
-          }
-
-
-          resolve();
-
-        }
-
-      );
+});
 
 
-    }
-  );
+return result.output_text;
+
 
 }
 
 
 
-// =======================
-// 视频分析
-// =======================
+
+const result =
+await deepseek.chat.completions.create({
+
+model:
+"deepseek-chat",
+
+
+messages:[
+
+{
+role:"user",
+content:prompt
+}
+
+]
+
+});
+
+
+return result.choices[0].message.content;
+
+
+}
+
+
+
+
+
+/*
+========================
+首页
+========================
+*/
+
+
+app.get("/",(req,res)=>{
+
+
+res.json({
+
+status:"ok",
+
+version:"4.0",
+
+provider:
+aiProvider,
+
+message:
+"AI Movie Studio Running"
+
+});
+
+
+});
+
+
+
+
+
+
+/*
+========================
+FFmpeg
+========================
+*/
+
+
+function extractAudio(
+input,
+output
+){
+
+
+return new Promise(
+
+(resolve,reject)=>{
+
+
+execFile(
+
+"ffmpeg",
+
+[
+
+"-y",
+
+"-i",
+
+input,
+
+"-vn",
+
+"-ac",
+
+"1",
+
+"-ar",
+
+"16000",
+
+output
+
+],
+
+
+(error)=>{
+
+
+if(error){
+
+reject(error);
+
+return;
+
+}
+
+
+resolve();
+
+
+}
+
+
+);
+
+
+}
+
+);
+
+
+}
+
+
+
+
+
+
+
+/*
+========================
+视频分析
+========================
+*/
+
 
 app.post(
 
@@ -166,7 +266,7 @@ async(req,res)=>{
 
 
 console.log(
-  "收到视频分析请求"
+"收到视频"
 );
 
 
@@ -176,26 +276,14 @@ try{
 
 if(!req.file){
 
-
 return res.status(400).json({
 
 error:
-"没有收到视频"
+"没有视频"
 
 });
 
-
 }
-
-
-
-console.log(
-
-"文件:",
-
-req.file.originalname
-
-);
 
 
 
@@ -204,15 +292,15 @@ req.file.path;
 
 
 const audioPath =
-videoPath + ".mp3";
+videoPath+".mp3";
 
 
 
-// 1 FFmpeg
 
 console.log(
-"正在提取音频"
+"提取音频"
 );
+
 
 
 await extractAudio(
@@ -224,30 +312,23 @@ audioPath
 );
 
 
+
 console.log(
-"音频提取完成"
+"开始语音识别"
 );
 
 
 
-// 2 转文字
 
-console.log(
-"开始AI转文字"
-);
+const transcript =
 
-
-
-const transcription =
-
-await client.audio.transcriptions.create({
+await openai.audio.transcriptions.create({
 
 file:
 
 fs.createReadStream(
 audioPath
 ),
-
 
 model:
 
@@ -256,67 +337,75 @@ model:
 });
 
 
+const text =
+transcript.text;
 
-const transcript =
-transcription.text;
 
 
 
 console.log(
-"文字生成完成"
+"生成解说稿"
 );
 
 
 
-
-// 3 剧情分析
-
-
-const aiResponse =
-
-await client.responses.create({
-
-model:
-
-"gpt-4.1-mini",
-
-
-input:
+const prompt =
 
 `
-你是一名专业电影解说作者。
 
-请根据下面的对白内容生成电影解说分析：
+你是一名百万播放电影解说作者。
 
-${transcript}
+
+根据下面电影对白：
+
+${text}
+
+
+生成短视频解说内容。
 
 
 输出：
 
-【故事简介】
 
-【主要人物】
+【爆款标题】
 
-【剧情发展】
-
-【核心冲突】
-
-【适合短视频解说稿】
-
-不要添加原文没有的信息。
-`
-
-});
+生成3个。
 
 
+【开场钩子】
 
-const summary =
-aiResponse.output_text;
-
-
+3秒吸引用户。
 
 
-// 删除临时文件
+【剧情简介】
+
+
+【完整解说稿】
+
+适合60-90秒AI配音。
+
+
+【字幕文本】
+
+短句分行。
+
+
+要求：
+
+不要虚构剧情。
+
+突出冲突和反转。
+
+`;
+
+
+
+const script =
+await generateText(prompt);
+
+
+
+
 
 fs.unlink(
 videoPath,
@@ -332,7 +421,6 @@ audioPath,
 
 
 
-// 返回结果
 
 res.json({
 
@@ -340,44 +428,30 @@ success:true,
 
 
 filename:
-
 req.file.originalname,
 
 
-size:
-
-req.file.size,
+transcript:text,
 
 
-transcript,
-
-
-summary
+script:script
 
 });
 
 
+
 }
+
 
 catch(error){
 
 
-console.error(
-
-"服务器错误:",
-
-error
-
-);
-
+console.error(error);
 
 
 res.status(500).json({
 
-success:false,
-
 error:
-
 error.message
 
 });
@@ -386,20 +460,23 @@ error.message
 }
 
 
-
 }
 
 );
 
 
 
-// =======================
-// 启动
-// =======================
+
+
+
+/*
+========================
+启动
+========================
+*/
 
 
 const PORT =
-
 process.env.PORT || 3000;
 
 
@@ -408,13 +485,13 @@ app.listen(
 
 PORT,
 
-
 ()=>{
 
 
 console.log(
 
-`AI Movie Studio running on ${PORT}`
+"AI Movie Studio running on "+
+PORT
 
 );
 
