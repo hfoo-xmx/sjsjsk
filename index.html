@@ -526,16 +526,41 @@ async function generateAI(){
 
 
     bar.style.width = "100%";
-
-
-    status.innerText =
-      "✅ 视频已经成功上传到服务器";
-
-
+   
     script.value =
 
 `视频上传成功！
+script.value =
+`🎬 视频分析完成
 
+━━━━━━━━━━━━━━
+
+【文件】
+
+${data.filename}
+
+【文件大小】
+
+${(data.size / 1024 / 1024).toFixed(2)} MB
+
+━━━━━━━━━━━━━━
+
+【AI语音识别】
+
+${data.transcript || "没有识别到对白"}
+
+━━━━━━━━━━━━━━
+
+【AI剧情分析】
+
+${data.summary || "没有生成剧情分析"}
+
+━━━━━━━━━━━━━━
+
+下一步：
+
+AI将根据剧情自动生成专业电影解说稿。
+`;
 文件名：
 ${data.filename}
 
