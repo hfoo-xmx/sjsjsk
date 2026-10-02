@@ -1,423 +1,647 @@
 <!doctype html>
 <html lang="zh-CN">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1.0"
+>
 
 <title>AI Movie Studio</title>
 
+
 <style>
 
+/* =========================
+   基础
+========================= */
+
 *{
-box-sizing:border-box;
+  box-sizing:border-box;
 }
 
 body{
-margin:0;
-font-family:Arial,"Microsoft YaHei",sans-serif;
-background:#080d18;
-color:white;
+  margin:0;
+  font-family:Arial,"Microsoft YaHei",sans-serif;
+  background:#080d18;
+  color:white;
 }
+
+
+/* =========================
+   顶部
+========================= */
 
 header{
-padding:18px 25px;
-border-bottom:1px solid #26304a;
-font-size:20px;
-font-weight:bold;
+  padding:18px 25px;
+  border-bottom:1px solid #26304a;
+  font-size:20px;
+  font-weight:bold;
 }
+
+
+/* =========================
+   主体
+========================= */
 
 main{
-max-width:1100px;
-margin:auto;
-padding:40px 20px;
+  max-width:1100px;
+  margin:auto;
+  padding:40px 20px;
 }
 
+
+/* =========================
+   Hero
+========================= */
+
 .hero{
-margin-bottom:35px;
+  margin-bottom:35px;
 }
 
 .hero small{
-color:#7789ff;
-letter-spacing:3px;
-font-weight:bold;
+  color:#7789ff;
+  letter-spacing:3px;
+  font-weight:bold;
 }
 
 h1{
-font-size:44px;
-margin:12px 0;
+  font-size:44px;
+  margin:12px 0;
 }
 
 .hero p{
-color:#9ba7bf;
-font-size:17px;
+  color:#9ba7bf;
+  font-size:17px;
 }
+
+
+/* =========================
+   Grid
+========================= */
 
 .grid{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:20px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
 }
 
+
+/* =========================
+   Card
+========================= */
+
 .card{
-background:#11192c;
-border:1px solid #283450;
-border-radius:16px;
-padding:22px;
-margin-bottom:20px;
+  background:#11192c;
+  border:1px solid #283450;
+  border-radius:16px;
+  padding:22px;
+  margin-bottom:20px;
 }
 
 h2{
-font-size:18px;
-margin-top:0;
+  font-size:18px;
+  margin-top:0;
 }
 
+
+/* =========================
+   上传区域
+========================= */
+
 .upload{
-height:220px;
-border:2px dashed #455274;
-border-radius:14px;
-display:flex;
-flex-direction:column;
-align-items:center;
-justify-content:center;
-cursor:pointer;
-color:#aab5ca;
+  height:220px;
+  border:2px dashed #455274;
+  border-radius:14px;
+
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+
+  cursor:pointer;
+
+  color:#aab5ca;
+
+  transition:.2s;
 }
 
 .upload:hover{
-border-color:#7c8cff;
+  border-color:#7c8cff;
+  background:#151e35;
 }
 
 .upload input{
-display:none;
+  display:none;
 }
 
 .upload-icon{
-font-size:40px;
-margin-bottom:10px;
+  font-size:40px;
+  margin-bottom:10px;
 }
 
-select,textarea{
-width:100%;
-padding:12px;
-margin-top:8px;
-margin-bottom:15px;
-background:#0a1121;
-border:1px solid #303c5a;
-border-radius:9px;
-color:white;
-font-size:15px;
+#filename{
+  max-width:90%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+
+/* =========================
+   Select / Textarea
+========================= */
+
+select,
+textarea{
+
+  width:100%;
+
+  padding:12px;
+
+  margin-top:8px;
+  margin-bottom:15px;
+
+  background:#0a1121;
+
+  border:1px solid #303c5a;
+
+  border-radius:9px;
+
+  color:white;
+
+  font-size:15px;
 }
 
 textarea{
-height:280px;
-resize:vertical;
+
+  height:280px;
+
+  resize:vertical;
 }
 
+
+/* =========================
+   Button
+========================= */
+
 button{
-width:100%;
-padding:14px;
-border:0;
-border-radius:10px;
-background:#7183ff;
-color:white;
-font-weight:bold;
-font-size:15px;
-cursor:pointer;
+
+  width:100%;
+
+  padding:14px;
+
+  border:0;
+
+  border-radius:10px;
+
+  background:#7183ff;
+
+  color:white;
+
+  font-weight:bold;
+
+  font-size:15px;
+
+  cursor:pointer;
+
+  transition:.2s;
 }
 
 button:hover{
-background:#8795ff;
+  background:#8795ff;
 }
 
+button:active{
+  transform:scale(.99);
+}
+
+
+/* =========================
+   Steps
+========================= */
+
 .steps{
-display:grid;
-grid-template-columns:repeat(5,1fr);
-gap:10px;
+
+  display:grid;
+
+  grid-template-columns:
+  repeat(5,1fr);
+
+  gap:10px;
 }
 
 .step{
-background:#0b1325;
-border:1px solid #293550;
-border-radius:10px;
-padding:14px 5px;
-text-align:center;
-color:#9ba6bd;
-font-size:13px;
+
+  background:#0b1325;
+
+  border:1px solid #293550;
+
+  border-radius:10px;
+
+  padding:14px 5px;
+
+  text-align:center;
+
+  color:#9ba6bd;
+
+  font-size:13px;
 }
 
 .step b{
-display:block;
-font-size:20px;
-color:white;
-margin-bottom:7px;
+
+  display:block;
+
+  font-size:20px;
+
+  color:white;
+
+  margin-bottom:7px;
 }
 
+
+/* =========================
+   Progress
+========================= */
+
 .progress{
-height:8px;
-background:#070b15;
-border-radius:20px;
-overflow:hidden;
-margin-top:20px;
+
+  height:8px;
+
+  background:#070b15;
+
+  border-radius:20px;
+
+  overflow:hidden;
+
+  margin-top:20px;
 }
 
 #bar{
-height:100%;
-width:0%;
-background:#7183ff;
-transition:.4s;
+
+  height:100%;
+
+  width:0%;
+
+  background:#7183ff;
+
+  transition:.4s;
 }
+
+
+/* =========================
+   Status
+========================= */
 
 #status{
-margin-top:10px;
-color:#9aa6be;
-font-size:13px;
+
+  margin-top:10px;
+
+  color:#9aa6be;
+
+  font-size:13px;
+
+  min-height:20px;
 }
 
+
+/* =========================
+   Preview
+========================= */
+
 .preview{
-height:280px;
-border:1px solid #293550;
-border-radius:12px;
-background:#070c16;
-display:flex;
-align-items:center;
-justify-content:center;
-text-align:center;
-color:#6f7b94;
+
+  height:280px;
+
+  border:1px solid #293550;
+
+  border-radius:12px;
+
+  background:#070c16;
+
+  display:flex;
+
+  align-items:center;
+
+  justify-content:center;
+
+  text-align:center;
+
+  color:#6f7b94;
 }
+
+
+/* =========================
+   Mobile
+========================= */
 
 @media(max-width:750px){
 
-.grid{
-grid-template-columns:1fr;
-}
+  .grid{
+    grid-template-columns:1fr;
+  }
 
-.steps{
-grid-template-columns:1fr 1fr;
-}
+  .steps{
+    grid-template-columns:1fr 1fr;
+  }
 
-h1{
-font-size:32px;
-}
+  h1{
+    font-size:32px;
+  }
+
+  main{
+    padding:25px 15px;
+  }
+
+  .upload{
+    height:190px;
+  }
 
 }
 
 </style>
+
 </head>
 
 
 <body>
 
+
 <header>
+
 🎬 AI Movie Studio
+
 </header>
 
 
 <main>
 
+
+<!-- =========================
+     Hero
+========================= -->
+
 <div class="hero">
 
-<small>AI VIDEO FACTORY</small>
+  <small>
+    AI VIDEO FACTORY
+  </small>
 
-<h1>
-一部电影，自动生成 AI 解说
-</h1>
+  <h1>
+    一部电影，自动生成 AI 解说
+  </h1>
 
-<p>
-上传电影 / 短剧 → AI分析 → 自动生成解说稿
-</p>
+  <p>
+    上传电影 / 短剧 → AI分析 → 自动生成解说稿
+  </p>
 
 </div>
 
+
+<!-- =========================
+     上传 + 设置
+========================= -->
 
 <div class="grid">
 
 
+  <!-- 上传 -->
+
+  <div class="card">
+
+    <h2>
+      ① 上传电影 / 短剧
+    </h2>
+
+
+    <label class="upload">
+
+      <input
+        id="video"
+        type="file"
+        accept="video/*"
+      >
+
+
+      <div class="upload-icon">
+        ↑
+      </div>
+
+
+      <strong id="filename">
+        点击选择视频
+      </strong>
+
+
+      <small>
+        MP4 / MOV / MKV
+      </small>
+
+    </label>
+
+  </div>
+
+
+  <!-- 设置 -->
+
+  <div class="card">
+
+    <h2>
+      ② AI生成设置
+    </h2>
+
+
+    <label>
+
+      解说类型
+
+      <select id="style">
+
+        <option>
+          电影解说
+        </option>
+
+        <option>
+          悬疑解说
+        </option>
+
+        <option>
+          情感故事
+        </option>
+
+        <option>
+          爆款短视频
+        </option>
+
+      </select>
+
+    </label>
+
+
+    <label>
+
+      目标时长
+
+      <select id="duration">
+
+        <option>
+          60秒
+        </option>
+
+        <option>
+          90秒
+        </option>
+
+        <option selected>
+          5分钟
+        </option>
+
+        <option>
+          10分钟
+        </option>
+
+      </select>
+
+    </label>
+
+
+    <button
+      onclick="generateAI()"
+    >
+
+      🚀 开始生成 AI 解说
+
+    </button>
+
+  </div>
+
+</div>
+
+
+<!-- =========================
+     AI生产流程
+========================= -->
+
 <div class="card">
 
-<h2>① 上传电影 / 短剧</h2>
-
-<label class="upload">
-
-<input
-id="video"
-type="file"
-accept="video/*"
->
-
-<div class="upload-icon">
-↑
-</div>
-
-<strong id="filename">
-点击选择视频
-</strong>
-
-<small>
-MP4 / MOV / MKV
-</small>
-
-</label>
-
-</div>
+  <h2>
+    ③ AI生产流程
+  </h2>
 
 
-
-<div class="card">
-
-<h2>② AI生成设置</h2>
+  <div class="steps">
 
 
-<label>
-解说类型
+    <div class="step">
 
-<select id="style">
+      <b>01</b>
 
-<option>
-电影解说
-</option>
+      视频分析
 
-<option>
-悬疑解说
-</option>
-
-<option>
-情感故事
-</option>
-
-<option>
-爆款短视频
-</option>
-
-</select>
-
-</label>
+    </div>
 
 
-<label>
-目标时长
+    <div class="step">
 
-<select id="duration">
+      <b>02</b>
 
-<option>
-60秒
-</option>
+      剧情理解
 
-<option>
-90秒
-</option>
-
-<option selected>
-5分钟
-</option>
-
-<option>
-10分钟
-</option>
-
-</select>
-
-</label>
+    </div>
 
 
-<button onclick="generateAI()">
+    <div class="step">
 
-🚀 开始生成 AI 解说
+      <b>03</b>
 
-</button>
+      AI编剧
 
-</div>
+    </div>
+
+
+    <div class="step">
+
+      <b>04</b>
+
+      配音字幕
+
+    </div>
+
+
+    <div class="step">
+
+      <b>05</b>
+
+      自动剪辑
+
+    </div>
+
+
+  </div>
+
+
+  <div class="progress">
+
+    <div id="bar"></div>
+
+  </div>
+
+
+  <div id="status">
+
+    等待开始
+
+  </div>
 
 </div>
 
 
-
-<div class="card">
-
-<h2>
-③ AI生产流程
-</h2>
-
-
-<div class="steps">
-
-<div class="step">
-<b>01</b>
-视频分析
-</div>
-
-<div class="step">
-<b>02</b>
-剧情理解
-</div>
-
-<div class="step">
-<b>03</b>
-AI编剧
-</div>
-
-<div class="step">
-<b>04</b>
-配音字幕
-</div>
-
-<div class="step">
-<b>05</b>
-自动剪辑
-</div>
-
-</div>
-
-
-<div class="progress">
-
-<div id="bar"></div>
-
-</div>
-
-
-<div id="status">
-
-等待开始
-
-</div>
-
-</div>
-
-
+<!-- =========================
+     AI结果 + 视频预览
+========================= -->
 
 <div class="grid">
 
 
-<div class="card">
+  <!-- AI解说稿 -->
 
-<h2>
-④ AI解说稿
-</h2>
+  <div class="card">
 
-<textarea
-id="script"
-placeholder="AI生成的解说稿会出现在这里……"
-></textarea>
-
-</div>
+    <h2>
+      ④ AI解说稿
+    </h2>
 
 
-<div class="card">
+    <textarea
+      id="script"
+      placeholder="AI生成的解说稿会出现在这里……"
+    ></textarea>
 
-<h2>
-⑤ 视频预览
-</h2>
+  </div>
 
-<div
-class="preview"
-id="preview"
->
 
-AI视频生成后将在这里播放
+  <!-- 视频预览 -->
 
-</div>
+  <div class="card">
 
-</div>
+    <h2>
+      ⑤ 视频预览
+    </h2>
+
+
+    <div
+      class="preview"
+      id="preview"
+    >
+
+      AI视频生成后将在这里播放
+
+    </div>
+
+  </div>
 
 </div>
 
@@ -425,66 +649,133 @@ AI视频生成后将在这里播放
 </main>
 
 
-
 <script>
 
 
-const video =
-document.getElementById("video");
+/* =========================
+   获取页面元素
+========================= */
 
+const video =
+  document.getElementById("video");
 
 const filename =
-document.getElementById("filename");
+  document.getElementById("filename");
 
+const status =
+  document.getElementById("status");
+
+const bar =
+  document.getElementById("bar");
+
+const script =
+  document.getElementById("script");
+
+
+/* =========================
+   选择视频
+========================= */
 
 video.addEventListener(
-"change",
-function(){
+  "change",
+  function(){
 
-if(this.files.length){
+    if(
+      !this.files ||
+      !this.files.length
+    ){
 
-filename.innerText =
-this.files[0].name;
+      filename.innerText =
+        "点击选择视频";
 
-}
+      status.innerText =
+        "等待开始";
 
-}
+      bar.style.width =
+        "0%";
+
+      return;
+    }
+
+
+    const file =
+      this.files[0];
+
+
+    const size =
+      (
+        file.size /
+        1024 /
+        1024
+      ).toFixed(2);
+
+
+    filename.innerText =
+      file.name;
+
+
+    status.innerText =
+      `已选择：${file.name} · ${size} MB`;
+
+
+    bar.style.width =
+      "0%";
+
+
+    script.value =
+      "";
+
+  }
 );
 
 
+/* =========================
+   开始生成 AI
+========================= */
 
 async function generateAI(){
 
-  if(!video.files.length){
 
-    alert("请先选择一个视频");
+  /* 检查是否选择视频 */
+
+  if(
+    !video.files ||
+    !video.files.length
+  ){
+
+    alert(
+      "请先选择一个视频"
+    );
 
     return;
 
   }
 
-  const status =
-    document.getElementById("status");
-
-  const bar =
-    document.getElementById("bar");
-
-  const script =
-    document.getElementById("script");
 
   const file =
     video.files[0];
 
+
+  /* 开始 */
+
   status.innerText =
     "正在上传视频到 AI 服务器……";
 
-  bar.style.width = "15%";
+
+  bar.style.width =
+    "10%";
 
 
-  try {
+  try{
+
+
+    /* =========================
+       创建上传数据
+    ========================= */
 
     const formData =
       new FormData();
+
 
     formData.append(
       "video",
@@ -492,10 +783,16 @@ async function generateAI(){
     );
 
 
+    /* =========================
+       上传
+    ========================= */
+
     status.innerText =
       "正在上传视频……";
 
-    bar.style.width = "40%";
+
+    bar.style.width =
+      "30%";
 
 
     const response =
@@ -504,44 +801,82 @@ async function generateAI(){
         "https://ai-movie-backend-v2.onrender.com/api/analyze-video",
 
         {
-          method: "POST",
-          body: formData
+          method:"POST",
+
+          body:formData
         }
 
       );
 
 
+    /* =========================
+       读取服务器结果
+    ========================= */
+
     const data =
       await response.json();
 
 
-    if(!response.ok){
+    /* =========================
+       检查服务器状态
+    ========================= */
+
+    if(
+      !response.ok
+    ){
 
       throw new Error(
+
         data.error ||
-        "服务器错误"
+        "服务器处理失败"
+
       );
 
     }
 
 
-    bar.style.width = "100%";
-   
+    /* =========================
+       完成
+    ========================= */
+
+    bar.style.width =
+      "100%";
+
+
+    status.innerText =
+      "✅ AI分析完成";
+
+
+    /* =========================
+       显示 AI 结果
+    ========================= */
+
     script.value =
 
-`视频上传成功！
-script.value =
 `🎬 视频分析完成
 
 ━━━━━━━━━━━━━━
 
 【文件】
 
-${data.filename}
+${data.filename || file.name}
 
 【文件大小】
 
-${(data.size / 1024 / 1024).toFixed(2)} MB
+${
+  data.size
+    ? (
+        data.size /
+        1024 /
+        1024
+      ).toFixed(2) + " MB"
+
+    : (
+        file.size /
+        1024 /
+        1024
+      ).toFixed(2) + " MB"
+}
 
 ━━━━━━━━━━━━━━
 
@@ -561,43 +896,47 @@ ${data.summary || "没有生成剧情分析"}
 
 AI将根据剧情自动生成专业电影解说稿。
 `;
-文件名：
-${data.filename}
 
-文件大小：
-${(data.size / 1024 / 1024).toFixed(2)} MB
-
-服务器已经成功收到你的电影。
-
-下一阶段：
-
-🎵 提取电影音频
-↓
-🗣️ AI语音识别
-↓
-📝 获得完整对白
-↓
-🧠 AI分析剧情
-↓
-✍️ 自动生成电影解说稿
-↓
-🎙️ AI配音
-↓
-🎬 自动剪辑`;
 
   }
 
+
   catch(error){
+
+
+    /* =========================
+       错误处理
+    ========================= */
 
     console.error(error);
 
+
     status.innerText =
-      "❌ 视频上传失败";
+      "❌ 视频处理失败";
+
+
+    bar.style.width =
+      "0%";
+
 
     script.value =
-      "错误：\n\n" +
-      error.message;
+
+`❌ AI生成失败
+
+错误信息：
+
+${error.message}
+
+请进入 Render → Logs 查看服务器最后 10～20 行错误信息。
+`;
 
   }
 
 }
+
+</script>
+
+
+</body>
+
+</html>
