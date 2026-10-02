@@ -10,6 +10,10 @@ import OpenAI from "openai";
 const app = express();
 
 
+// =======================
+// CORS
+// =======================
+
 app.use(
   cors({
     origin: "*"
@@ -21,49 +25,89 @@ app.use(express.json());
 
 
 
+// =======================
+// 上传
+// =======================
+
 const upload = multer({
+
   dest: "/tmp/uploads/"
-});
-
-
-
-const openai = new OpenAI({
-
-  apiKey: process.env.OPENAI_API_KEY
 
 });
 
 
-const deepseek = new OpenAI({
-
-  apiKey: process.env.DEEPSEEK_API_KEY,
-
-  baseURL: "https://api.deepseek.com"
-
-});
 
 
+// =======================
+// AI 配置
+// =======================
 
 const provider =
 process.env.AI_PROVIDER || "deepseek";
 
 
 
+const openai =
+new OpenAI({
+
+apiKey:
+process.env.OPENAI_API_KEY
+
+});
 
 
-// 测试接口
 
-app.get("/", (req,res)=>{
+const deepseek =
+new OpenAI({
 
-  res.json({
+apiKey:
+process.env.DEEPSEEK_API_KEY,
 
-    status:"ok",
+baseURL:
+"https://api.deepseek.com"
 
-    version:"5.1",
+});
 
-    provider:provider
 
-  });
+
+
+// =======================
+// 首页
+// =======================
+
+app.get("/",(req,res)=>{
+
+res.json({
+
+status:"ok",
+
+version:"5.1.1",
+
+provider:provider,
+
+message:
+"AI Movie Studio Running"
+
+});
+
+});
+
+
+
+
+// =======================
+// Render健康检查
+// =======================
+
+app.get("/health",(req,res)=>{
+
+
+res.status(200).json({
+
+status:"healthy"
+
+});
+
 
 });
 
@@ -72,175 +116,67 @@ app.get("/", (req,res)=>{
 
 
 
-// 提取音频
+// =======================
+// FFmpeg 音频
+// =======================
 
-function extractAudio(input,output){
-
-  return new Promise((resolve,reject)=>{
-
-
-    execFile(
-
-      "ffmpeg",
-
-      [
-
-        "-y",
-
-        "-i",
-
-        input,
-
-        "-vn",
-
-        "-ac",
-
-        "1",
-
-        output
-
-      ],
+function extractAudio(
+input,
+output
+){
 
 
-      (err)=>{
-
-        if(err){
-
-          reject(err);
-
-        }else{
-
-          resolve();
-
-        }
-
-      }
-
-    );
+return new Promise(
+(resolve,reject)=>{
 
 
-  });
+execFile(
 
-}
+"ffmpeg",
 
+[
 
+"-y",
 
+"-i",
 
+input,
 
-// 视频截图
+"-vn",
 
-function extractFrames(video,dir){
+"-ac",
 
-  return new Promise((resolve,reject)=>{
+"1",
 
+output
 
-    if(!fs.existsSync(dir)){
-
-      fs.mkdirSync(dir,{
-        recursive:true
-      });
-
-    }
-
+],
 
 
-    execFile(
-
-      "ffmpeg",
-
-      [
-
-        "-y",
-
-        "-i",
-
-        video,
-
-        "-vf",
-
-        "fps=1/5",
-
-        path.join(
-          dir,
-          "frame-%03d.jpg"
-        )
-
-      ],
+(error)=>{
 
 
-      (err)=>{
+if(error){
 
-        if(err){
+reject(error);
 
-          reject(err);
+}else{
 
-        }else{
-
-          resolve();
-
-        }
-
-      }
-
-
-    );
-
-
-  });
+resolve();
 
 }
 
 
+}
 
 
-
-// AI生成文字
-
-async function generateScript(text){
+);
 
 
-  if(provider==="openai"){
+}
 
 
-    const result =
-    await openai.responses.create({
-
-      model:"gpt-4.1-mini",
-
-      input:text
-
-    });
-
-
-    return result.output_text;
-
-
-  }
-
-
-
-  const result =
-  await deepseek.chat.completions.create({
-
-    model:"deepseek-chat",
-
-    messages:[
-
-      {
-
-        role:"user",
-
-        content:text
-
-      }
-
-    ]
-
-  });
-
-
-
-  return result.choices[0].message.content;
+);
 
 
 }
@@ -250,8 +186,163 @@ async function generateScript(text){
 
 
 
+// =======================
+// FFmpeg截图
+// =======================
 
+function extractFrames(
+video,
+dir
+){
+
+
+return new Promise(
+(resolve,reject)=>{
+
+
+if(!fs.existsSync(dir)){
+
+fs.mkdirSync(
+dir,
+{
+recursive:true
+}
+);
+
+}
+
+
+
+execFile(
+
+"ffmpeg",
+
+[
+
+"-y",
+
+"-i",
+
+video,
+
+"-vf",
+
+"fps=1/5",
+
+path.join(
+dir,
+"frame-%03d.jpg"
+)
+
+],
+
+
+(error)=>{
+
+
+if(error){
+
+reject(error);
+
+}else{
+
+resolve();
+
+}
+
+
+}
+
+
+);
+
+
+
+}
+
+
+);
+
+
+}
+
+
+
+
+
+
+// =======================
+// AI生成
+// =======================
+
+async function generateScript(
+prompt
+){
+
+
+if(provider==="openai"){
+
+
+const result =
+
+await openai.responses.create({
+
+model:
+"gpt-4.1-mini",
+
+input:
+prompt
+
+});
+
+
+return result.output_text;
+
+
+}
+
+
+
+
+const result =
+
+await deepseek.chat.completions.create({
+
+model:
+"deepseek-chat",
+
+
+messages:[
+
+{
+
+role:"user",
+
+content:prompt
+
+}
+
+]
+
+
+});
+
+
+
+return result.choices[0].message.content;
+
+
+}
+
+
+
+
+
+
+
+// =======================
 // 视频分析接口
+// =======================
 
 app.post(
 
@@ -270,7 +361,8 @@ if(!req.file){
 
 return res.status(400).json({
 
-error:"没有视频"
+error:
+"没有上传视频"
 
 });
 
@@ -289,8 +381,10 @@ const videoPath =
 req.file.path;
 
 
+
 const audioPath =
 videoPath+".mp3";
+
 
 
 const frameDir =
@@ -300,7 +394,10 @@ videoPath+"_frames";
 
 
 
-console.log("提取音频");
+console.log(
+"提取音频"
+);
+
 
 
 await extractAudio(
@@ -314,7 +411,10 @@ audioPath
 
 
 
-console.log("抽取画面");
+console.log(
+"抽取画面"
+);
+
 
 
 await extractFrames(
@@ -329,7 +429,11 @@ frameDir
 
 
 
-console.log("语音识别");
+
+console.log(
+"语音识别"
+);
+
 
 
 const speech =
@@ -339,6 +443,7 @@ await openai.audio.transcriptions.create({
 file:
 
 fs.createReadStream(audioPath),
+
 
 model:
 
@@ -356,7 +461,9 @@ speech.text;
 
 
 
-console.log("生成解说");
+console.log(
+"生成解说稿"
+);
 
 
 
@@ -366,28 +473,34 @@ await generateScript(
 
 `
 
-你是一个百万播放电影解说作者。
+你是一名百万播放电影解说作者。
 
 
-根据下面内容生成短视频解说：
+根据下面电影对白生成短视频解说。
+
+
+对白：
 
 ${transcript}
 
 
+
 输出：
 
-1. 三个爆款标题
+1. 爆款标题3个
 
-2. 三秒开场钩子
+2. 开场3秒钩子
 
 3. 60秒电影解说稿
 
-4. 字幕短句
+4. 字幕文本
 
 
 要求：
 
-节奏快，有悬念。
+节奏快。
+
+突出冲突。
 
 不要虚构剧情。
 
@@ -403,10 +516,7 @@ res.json({
 
 success:true,
 
-
-
 transcript:transcript,
-
 
 script:script
 
@@ -416,16 +526,19 @@ script:script
 
 }
 
-
 catch(error){
 
 
-console.error(error);
+console.error(
+error
+);
+
 
 
 res.status(500).json({
 
-error:error.message
+error:
+error.message
 
 });
 
@@ -442,6 +555,10 @@ error:error.message
 
 
 
+
+// =======================
+// 启动
+// =======================
 
 const PORT =
 process.env.PORT || 3000;
@@ -454,12 +571,14 @@ PORT,
 
 ()=>{
 
+
 console.log(
 
-"AI Movie Studio V5.1 running on "+
+"AI Movie Studio V5.1.1 running on "+
 PORT
 
 );
+
 
 }
 
