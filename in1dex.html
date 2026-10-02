@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Movie Studio</title>
+  <style>
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Arial,"Microsoft YaHei",sans-serif;
+      background:#0b1020;
+      color:#fff;
+    }
+    header{
+      padding:18px 24px;
+      border-bottom:1px solid #27304a;
+      font-size:20px;
+      font-weight:bold;
+    }
+    main{
+      max-width:1000px;
+      margin:auto;
+      padding:40px 20px;
+    }
+    h1{font-size:42px;margin:10px 0}
+    .sub{color:#9da8c0;font-size:17px;margin-bottom:35px}
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:20px;
+    }
+    .card{
+      background:#121a2e;
+      border:1px solid #293451;
+      border-radius:16px;
+      padding:22px;
+      margin-bottom:20px;
+    }
+    h2{font-size:18px}
+    .upload{
+      height:220px;
+      border:2px dashed #46537a;
+      border-radius:14px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      color:#aab5cc;
+    }
+    .upload:hover{border-color:#7c8cff}
+    input[type=file]{display:none}
+    .icon{font-size:40px;margin-bottom:10px}
+    select,textarea{
+      width:100%;
+      margin-top:8px;
+      margin-bottom:16px;
+      padding:12px;
+      border-radius:9px;
+      border:1px solid #303b59;
+      background:#0c1325;
+      color:#fff;
+      font-size:15px;
+    }
+    textarea{height:260px;resize:vertical}
+    button{
+      width:100%;
+      padding:13px;
+      border:0;
+      border-radius:9px;
+      background:#7183ff;
+      color:#fff;
+      font-weight:bold;
+      cursor:pointer;
+      font-size:15px;
+    }
+    button:hover{background:#8493ff}
+    .steps{
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:10px;
+    }
+    .step{
+      padding:15px 8px;
+      text-align:center;
+      background:#0d1528;
+      border:1px solid #293451;
+      border-radius:10px;
+      color:#9ba6bd;
+      font-size:13px;
+    }
+    .step span{
+      display:block;
+      color:#fff;
+      font-size:20px;
+      margin-bottom:7px;
+    }
+    .progress{
+      margin-top:20px;
+      height:8px;
+      background:#080d18;
+      border-radius:20px;
+      overflow:hidden;
+    }
+    #bar{
+      height:100%;
+      width:0%;
+      background:#7183ff;
+      transition:.4s;
+    }
+    #status{
+      color:#9ba6bd;
+      margin-top:10px;
+      font-size:13px;
+    }
+    .preview{
+      height:260px;
+      background:#080d18;
+      border:1px solid #293451;
+      border-radius:12px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      color:#69758e;
+    }
+    @media(max-width:700px){
+      .grid{grid-template-columns:1fr}
+      .steps{grid-template-columns:1fr 1fr}
+      h1{font-size:32px}
+    }
+  </style>
+</head>
+
+<body>
+
+<header>🎬 AI Movie Studio</header>
+
+<main>
+
+  <p style="color:#8192ff;font-weight:bold;letter-spacing:3px">
+    AI VIDEO FACTORY
+  </p>
+
+  <h1>一部电影，自动生成 AI 解说短视频</h1>
+
+  <div class="sub">
+    上传电影 / 短剧 → AI分析剧情 → 自动生成解说 → 配音 → 字幕 → 剪辑
+  </div>
+
+  <div class="grid">
+
+    <div class="card">
+      <h2>① 上传电影 / 短剧</h2>
+
+      <label class="upload">
+        <input id="video" type="file" accept="video/*">
+        <div class="icon">↑</div>
+        <strong id="filename">点击选择视频</strong>
+        <small>MP4 / MOV / MKV</small>
+      </label>
+    </div>
+
+    <div class="card">
+      <h2>② 生成设置</h2>
+
+      <label>解说类型</label>
+      <select id="style">
+        <option>电影解说</option>
+        <option>悬疑解说</option>
+        <option>情感故事</option>
+        <option>爆款短视频</option>
+        <option>剧情复述</option>
+      </select>
+
+      <label>视频长度</label>
+      <select id="duration">
+        <option>60 秒</option>
+        <option>90 秒</option>
+        <option>3 分钟</option>
+        <option selected>5 分钟</option>
+        <option>10 分钟</option>
+      </select>
+
+      <label>视频比例</label>
+      <select>
+        <option>9:16 竖屏</option>
+        <option>16:9 横屏</option>
+        <option>1:1 方形</option>
+      </select>
+
+      <button onclick="startGenerate()">
+        🚀 开始生成
+      </button>
+    </div>
+
+  </div>
+
+  <div class="card">
+
+    <h2>③ AI 自动生产</h2>
+
+    <div class="steps">
+      <div class="step"><span>01</span>视频分析</div>
+      <div class="step"><span>02</span>剧情理解</div>
+      <div class="step"><span>03</span>AI解说</div>
+      <div class="step"><span>04</span>配音字幕</div>
+      <div class="step"><span>05</span>自动剪辑</div>
+    </div>
+
+    <div class="progress">
+      <div id="bar"></div>
+    </div>
+
+    <div id="status">
+      等待上传视频
+    </div>
+
+  </div>
+
+  <div class="grid">
+
+    <div class="card">
+      <h2>④ AI 解说稿</h2>
+
+      <textarea id="script"
+        placeholder="生成后，AI解说稿会出现在这里……"></textarea>
+
+    </div>
+
+    <div class="card">
+
+      <h2>⑤ 最终视频</h2>
+
+      <div class="preview" id="preview">
+        生成完成后<br>
+        视频将在这里播放
+      </div>
+
+    </div>
+
+  </div>
+
+</main>
+
+<script>
+
+const video = document.getElementById("video");
+const filename = document.getElementById("filename");
+
+video.addEventListener("change",function(){
+
+  if(this.files.length){
+    filename.innerText = this.files[0].name;
+  }
+
+});
+
+async function startGenerate(){
+
+  if(!video.files.length){
+
+    alert("请先上传电影或短剧");
+
+    return;
+
+  }
+
+  const bar = document.getElementById("bar");
+  const status = document.getElementById("status");
+  const script = document.getElementById("script");
+
+  const messages = [
+
+    "正在分析视频……",
+
+    "正在识别人物和场景……",
+
+    "正在理解剧情……",
+
+    "正在生成AI解说稿……",
+
+    "正在生成配音和字幕……",
+
+    "正在自动剪辑……"
+
+  ];
+
+  for(let i=0;i<messages.length;i++){
+
+    status.innerText = messages[i];
+
+    bar.style.width =
+      ((i+1)/messages.length*100)+"%";
+
+    await new Promise(
+      resolve => setTimeout(resolve,700)
+    );
+
+  }
+
+  script.value =
+`这个故事，从一开始就没有看上去那么简单。
+
+主人公原本以为自己只是偶然卷入了一场意外，却没想到，一个不起眼的线索，让整件事情开始发生变化。
+
+随着调查不断深入，他发现自己身边的人似乎都隐藏着秘密。
+
+而真正让他感到恐惧的是……
+
+这一切可能从一开始就是一个精心设计的局。
+
+接下来发生的事情，更是让所有人都没有想到。
+
+【正式版本】
+这里将由AI根据你上传的电影真实内容，
+自动生成完整电影解说稿。`;
+
+  status.innerText =
+    "✅ MVP演示生成完成";
+
+  document.getElementById("preview").innerHTML =
+    "🎬 AI视频生成完成<br><br>" +
+    "接入后端后，这里将播放真实MP4";
+
+}
+
+</script>
+
+</body>
+</html>
