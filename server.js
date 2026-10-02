@@ -1,11 +1,17 @@
 import express from "express";
 import cors from "cors";
+import multer from "multer";
+import fs from "fs";
 import OpenAI from "openai";
 
 const app = express();
 
 app.use(cors());
-app.use(express.json({ limit: "10mb" }));
+app.use(express.json());
+
+const upload = multer({
+  dest: "/tmp/uploads/"
+});
 
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -14,61 +20,42 @@ const client = new OpenAI({
 app.get("/", (req, res) => {
   res.json({
     status: "ok",
-    message: "AI Movie Studio 后端正在运行"
+    version: "2.0",
+    message: "AI Movie Studio V2 后端运行正常"
   });
 });
 
-app.post("/api/generate-script", async (req, res) => {
+app.post("/api/analyze-video", upload.single("video"), async (req, res) => {
+
   try {
 
-    const {
-      movieInfo,
-      style = "电影解说",
-      duration = "5分钟"
-    } = req.body;
-
-    if (!movieInfo) {
+    if (!req.file) {
       return res.status(400).json({
-        error: "缺少电影剧情信息"
+        error: "没有收到视频文件"
       });
     }
 
-    const prompt = `
-你是一名专业的中文电影解说编剧。
+    console.log("收到视频：", req.file.originalname);
+    console.log("文件大小：", req.file.size);
 
-请根据下面提供的电影信息，
-生成一篇适合短视频平台的电影解说稿。
+    /*
+      V2 第一阶段：
+      先确认服务器能够真正收到用户上传的视频。
 
-电影信息：
-${movieInfo}
+      下一阶段再加入：
+      视频 → 音频 → ASR → 剧情分析
+    */
 
-解说风格：
-${style}
-
-目标时长：
-${duration}
-
-要求：
-
-1. 开头迅速制造悬念。
-2. 语言口语化。
-3. 按照剧情发展讲述。
-4. 保留重要人物和关键事件。
-5. 不要虚构不存在的剧情。
-6. 每隔一段制造新的悬念。
-7. 最终形成完整故事。
-8. 只输出解说稿，不要解释创作过程。
-`;
-
-    const response = await client.responses.create({
-      model: "gpt-6-luna",
-      input: prompt
-    });
-
-    res.json({
+    const result = {
       success: true,
-      script: response.output_text
-    });
+      filename: req.file.originalname,
+      size: req.file.size,
+      message: "服务器已经成功收到视频文件"
+    };
+
+    fs.unlink(req.file.path, () => {});
+
+    res.json(result);
 
   } catch (error) {
 
@@ -76,14 +63,13 @@ ${duration}
 
     res.status(500).json({
       success: false,
-      error: error.message || "AI生成失败"
+      error: error.message
     });
 
   }
+
 });
 
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log(`AI Movie Studio running on port ${PORT}`);
+app.listen(process.env.PORT || 3000, () => {
+  console.log("AI Movie Studio V2 running");
 });
