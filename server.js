@@ -2,27 +2,26 @@ import express from "express";
 import cors from "cors";
 import multer from "multer";
 import fs from "fs";
+import path from "path";
 import { execFile } from "child_process";
 import OpenAI from "openai";
 
 const app = express();
 
 
-/*
-========================
-CORS
-========================
-*/
+// =======================
+// CORS
+// =======================
 
 app.use(
   cors({
-    origin:"*",
-    methods:[
+    origin: "*",
+    methods: [
       "GET",
       "POST",
       "OPTIONS"
     ],
-    allowedHeaders:[
+    allowedHeaders: [
       "Content-Type"
     ]
   })
@@ -33,152 +32,86 @@ app.use(express.json());
 
 
 
-/*
-========================
-上传
-========================
-*/
+// =======================
+// 上传配置
+// =======================
 
-const upload =
-multer({
-  dest:"/tmp/uploads/"
+const upload = multer({
+
+  dest: "/tmp/uploads/"
+
 });
 
 
 
-/*
-========================
-AI PROVIDER
-========================
-*/
+// =======================
+// AI
+// =======================
+
+const openai = new OpenAI({
+
+  apiKey:
+  process.env.OPENAI_API_KEY
+
+});
 
 
-const aiProvider =
+const deepseek = new OpenAI({
+
+  apiKey:
+  process.env.DEEPSEEK_API_KEY,
+
+  baseURL:
+  "https://api.deepseek.com"
+
+});
+
+
+
+const AI_PROVIDER =
 process.env.AI_PROVIDER || "deepseek";
 
 
 
-const openai =
-new OpenAI({
-
-apiKey:
-process.env.OPENAI_API_KEY
-
-});
 
 
-
-const deepseek =
-new OpenAI({
-
-apiKey:
-process.env.DEEPSEEK_API_KEY,
-
-baseURL:
-"https://api.deepseek.com"
-
-});
-
-
-
-
-
-async function generateText(prompt){
-
-
-if(aiProvider==="openai"){
-
-
-const result =
-await openai.responses.create({
-
-model:
-"gpt-4.1-mini",
-
-input:
-prompt
-
-});
-
-
-return result.output_text;
-
-
-}
-
-
-
-
-const result =
-await deepseek.chat.completions.create({
-
-model:
-"deepseek-chat",
-
-
-messages:[
-
-{
-role:"user",
-content:prompt
-}
-
-]
-
-});
-
-
-return result.choices[0].message.content;
-
-
-}
-
-
-
-
-
-/*
-========================
-首页
-========================
-*/
-
+// =======================
+// 首页
+// =======================
 
 app.get("/",(req,res)=>{
-
 
 res.json({
 
 status:"ok",
 
-version:"4.0",
+version:"5.0",
 
 provider:
-aiProvider,
+AI_PROVIDER,
 
 message:
-"AI Movie Studio Running"
+"AI Movie Studio V5 Running"
+
+});
 
 });
 
 
-});
 
 
 
-
-
-
-/*
-========================
-FFmpeg
-========================
-*/
+// =======================
+// FFmpeg 提取音频
+// =======================
 
 
 function extractAudio(
+
 input,
+
 output
+
 ){
 
 
@@ -235,7 +168,9 @@ resolve();
 );
 
 
+
 }
+
 
 );
 
@@ -248,11 +183,197 @@ resolve();
 
 
 
-/*
-========================
-视频分析
-========================
-*/
+// =======================
+// FFmpeg 视频抽帧
+// =======================
+
+
+function extractFrames(
+
+videoPath,
+
+outputDir
+
+){
+
+
+return new Promise(
+
+(resolve,reject)=>{
+
+
+if(!fs.existsSync(outputDir)){
+
+fs.mkdirSync(
+outputDir,
+{
+recursive:true
+}
+);
+
+}
+
+
+
+execFile(
+
+"ffmpeg",
+
+[
+
+"-y",
+
+"-i",
+
+videoPath,
+
+
+"-vf",
+
+"fps=1/5",
+
+
+path.join(
+
+outputDir,
+
+"frame-%03d.jpg"
+
+)
+
+
+],
+
+
+(error)=>{
+
+
+if(error){
+
+reject(error);
+
+return;
+
+}
+
+
+resolve();
+
+}
+
+
+
+);
+
+
+
+}
+
+
+);
+
+
+}
+
+
+
+
+
+// =======================
+// 获取图片列表
+// =======================
+
+
+function getImages(dir){
+
+
+return fs.readdirSync(dir)
+
+.filter(
+
+file=>
+
+file.endsWith(".jpg")
+
+)
+
+.map(
+
+file=>
+
+path.join(
+dir,
+file
+)
+
+);
+
+
+// =======================
+// AI 文本生成
+// =======================
+
+async function generateText(prompt){
+
+
+if(AI_PROVIDER==="openai"){
+
+
+const result =
+await openai.responses.create({
+
+model:
+"gpt-4.1-mini",
+
+input:
+prompt
+
+});
+
+
+return result.output_text;
+
+
+}
+
+
+
+const result =
+await deepseek.chat.completions.create({
+
+model:
+"deepseek-chat",
+
+
+messages:[
+
+{
+
+role:"user",
+
+content:prompt
+
+}
+
+]
+
+
+});
+
+
+return result.choices[0].message.content;
+
+
+}
+
+
+
+
+
+
+// =======================
+// 视频分析接口
+// =======================
 
 
 app.post(
@@ -279,7 +400,7 @@ if(!req.file){
 return res.status(400).json({
 
 error:
-"没有视频"
+"没有上传视频"
 
 });
 
@@ -287,8 +408,10 @@ error:
 
 
 
+
 const videoPath =
 req.file.path;
+
 
 
 const audioPath =
@@ -296,11 +419,18 @@ videoPath+".mp3";
 
 
 
+const frameDir =
+videoPath+"_frames";
+
+
+
+
+// 1. 提取声音
+
 
 console.log(
 "提取音频"
 );
-
 
 
 await extractAudio(
@@ -313,14 +443,50 @@ audioPath
 
 
 
+
+// 2. 截取画面
+
+
 console.log(
-"开始语音识别"
+"抽取视频画面"
+);
+
+
+await extractFrames(
+
+videoPath,
+
+frameDir
+
+);
+
+
+
+const frames =
+getImages(frameDir);
+
+
+
+console.log(
+
+"截图数量:",
+
+frames.length
+
 );
 
 
 
 
-const transcript =
+// 3. 语音识别
+
+
+console.log(
+"语音识别"
+);
+
+
+const transcription =
 
 await openai.audio.transcriptions.create({
 
@@ -330,6 +496,7 @@ fs.createReadStream(
 audioPath
 ),
 
+
 model:
 
 "gpt-4o-transcribe"
@@ -337,10 +504,42 @@ model:
 });
 
 
-const text =
-transcript.text;
+const transcript =
+transcription.text;
 
 
+
+
+
+// 4. 生成视觉描述
+
+let visualInfo =
+"";
+
+
+
+if(frames.length){
+
+
+visualInfo =
+`
+
+视频画面数量：
+
+${frames.length}
+
+请结合视频画面理解剧情。
+
+`;
+
+
+
+}
+
+
+
+
+// 5. 生成解说稿
 
 
 console.log(
@@ -349,62 +548,61 @@ console.log(
 
 
 
-const prompt =
+const script =
+
+await generateText(
 
 `
 
 你是一名百万播放电影解说作者。
 
-
-根据下面电影对白：
-
-${text}
+根据下面信息生成短视频解说稿。
 
 
-生成短视频解说内容。
+【对白】
+
+${transcript}
 
 
-输出：
 
+【画面信息】
 
-【爆款标题】
+${visualInfo}
 
-生成3个。
-
-
-【开场钩子】
-
-3秒吸引用户。
-
-
-【剧情简介】
-
-
-【完整解说稿】
-
-适合60-90秒AI配音。
-
-
-【字幕文本】
-
-短句分行。
 
 
 要求：
 
+生成：
+
+1. 爆款标题3个
+
+2. 开头3秒钩子
+
+3. 60-90秒电影解说稿
+
+4. 字幕短句版本
+
+
+要求：
+
+符合短视频节奏。
+
+突出冲突、悬念、反转。
+
 不要虚构剧情。
 
-突出冲突和反转。
 
-`;
+`
 
-
-
-const script =
-await generateText(prompt);
+);
 
 
 
+
+
+
+// 清理文件
 
 
 fs.unlink(
@@ -431,22 +629,32 @@ filename:
 req.file.originalname,
 
 
-transcript:text,
+transcript,
 
 
-script:script
+script,
+
+
+frames:
+frames.length
+
 
 });
 
 
 
-}
 
+}
 
 catch(error){
 
 
-console.error(error);
+console.error(
+
+error
+
+);
+
 
 
 res.status(500).json({
@@ -469,11 +677,10 @@ error.message
 
 
 
-/*
-========================
-启动
-========================
-*/
+
+// =======================
+// 启动服务器
+// =======================
 
 
 const PORT =
@@ -490,7 +697,7 @@ PORT,
 
 console.log(
 
-"AI Movie Studio running on "+
+"AI Movie Studio V5 running on "+
 PORT
 
 );
@@ -499,3 +706,4 @@ PORT
 }
 
 );
+}
