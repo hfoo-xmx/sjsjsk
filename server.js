@@ -707,3 +707,4 @@ PORT
 
 );
 }
+console.log("SERVER FILE LOADED");
