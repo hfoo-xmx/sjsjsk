@@ -260,73 +260,62 @@ video.addEventListener("change",function(){
 async function startGenerate(){
 
   if(!video.files.length){
-
     alert("请先上传电影或短剧");
-
     return;
-
   }
 
   const bar = document.getElementById("bar");
   const status = document.getElementById("status");
   const script = document.getElementById("script");
 
-  const messages = [
+  status.innerText = "正在连接 AI 服务器……";
+  bar.style.width = "20%";
 
-    "正在分析视频……",
+  try {
 
-    "正在识别人物和场景……",
+    const response = await fetch(
+      "https://ai-movie-backend-f9g1.onrender.com/api/generate-script",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          movieInfo:
+            "请根据用户上传的视频制作电影解说。目前这是 MVP 测试阶段。",
+          style: "电影解说",
+          duration: "5分钟"
+        })
+      }
+    );
 
-    "正在理解剧情……",
+    const data = await response.json();
 
-    "正在生成AI解说稿……",
+    if(!response.ok){
+      throw new Error(data.error || "服务器错误");
+    }
 
-    "正在生成配音和字幕……",
+    bar.style.width = "100%";
 
-    "正在自动剪辑……"
+    status.innerText = "✅ AI 解说生成完成";
 
-  ];
+    script.value = data.script;
 
-  for(let i=0;i<messages.length;i++){
+    document.getElementById("preview").innerHTML =
+      "🎬 AI解说稿已经生成<br><br>" +
+      "下一步将把它自动配音并匹配电影画面。";
 
-    status.innerText = messages[i];
+  } catch(error) {
 
-    bar.style.width =
-      ((i+1)/messages.length*100)+"%";
+    console.error(error);
 
-    await new Promise(
-      resolve => setTimeout(resolve,700)
+    status.innerText = "❌ AI生成失败";
+
+    alert(
+      "AI生成失败：\n" +
+      error.message
     );
 
   }
 
-  script.value =
-`这个故事，从一开始就没有看上去那么简单。
-
-主人公原本以为自己只是偶然卷入了一场意外，却没想到，一个不起眼的线索，让整件事情开始发生变化。
-
-随着调查不断深入，他发现自己身边的人似乎都隐藏着秘密。
-
-而真正让他感到恐惧的是……
-
-这一切可能从一开始就是一个精心设计的局。
-
-接下来发生的事情，更是让所有人都没有想到。
-
-【正式版本】
-这里将由AI根据你上传的电影真实内容，
-自动生成完整电影解说稿。`;
-
-  status.innerText =
-    "✅ MVP演示生成完成";
-
-  document.getElementById("preview").innerHTML =
-    "🎬 AI视频生成完成<br><br>" +
-    "接入后端后，这里将播放真实MP4";
-
 }
-
-</script>
-
-</body>
-</html>
