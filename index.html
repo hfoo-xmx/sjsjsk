@@ -455,155 +455,124 @@ this.files[0].name;
 
 async function generateAI(){
 
+  if(!video.files.length){
 
-if(!video.files.length){
+    alert("请先选择一个视频");
 
-alert(
-"请先选择一个视频"
-);
+    return;
 
-return;
+  }
 
-}
+  const status =
+    document.getElementById("status");
 
+  const bar =
+    document.getElementById("bar");
 
-const status =
-document.getElementById("status");
+  const script =
+    document.getElementById("script");
 
+  const file =
+    video.files[0];
 
-const bar =
-document.getElementById("bar");
+  status.innerText =
+    "正在上传视频到 AI 服务器……";
 
-
-const script =
-document.getElementById("script");
-
-
-const style =
-document.getElementById("style").value;
+  bar.style.width = "15%";
 
 
-const duration =
-document.getElementById("duration").value;
+  try {
+
+    const formData =
+      new FormData();
+
+    formData.append(
+      "video",
+      file
+    );
 
 
+    status.innerText =
+      "正在上传视频……";
 
-status.innerText =
-"正在连接 AI 服务器……";
-
-
-bar.style.width =
-"20%";
+    bar.style.width = "40%";
 
 
+    const response =
+      await fetch(
 
-try{
+        "https://ai-movie-backend-f9g1.onrender.com/api/analyze-video",
 
+        {
+          method: "POST",
+          body: formData
+        }
 
-const response =
-await fetch(
-
-"https://ai-movie-backend-f9g1.onrender.com/api/generate-script",
-
-{
-
-method:"POST",
-
-headers:{
-"Content-Type":
-"application/json"
-},
-
-body:JSON.stringify({
-
-movieInfo:
-`用户上传了一部电影/短剧。
-
-当前阶段是AI电影解说MVP测试。
-
-请生成一个电影解说示例。`,
-
-style:style,
-
-duration:duration
-
-})
-
-}
-
-);
+      );
 
 
-
-const data =
-await response.json();
-
+    const data =
+      await response.json();
 
 
-if(!response.ok){
+    if(!response.ok){
 
-throw new Error(
-data.error ||
-"服务器返回错误"
-);
+      throw new Error(
+        data.error ||
+        "服务器错误"
+      );
 
-}
-
-
-
-bar.style.width =
-"100%";
+    }
 
 
-status.innerText =
-"✅ AI解说生成完成";
+    bar.style.width = "100%";
 
 
-script.value =
-data.script;
+    status.innerText =
+      "✅ 视频已经成功上传到服务器";
 
 
-document.getElementById(
-"preview"
-).innerHTML =
+    script.value =
 
-"🎬 AI解说已经生成<br><br>" +
+`视频上传成功！
 
-"下一阶段：<br>" +
+文件名：
+${data.filename}
 
-"自动分析真实电影画面<br>" +
+文件大小：
+${(data.size / 1024 / 1024).toFixed(2)} MB
 
-"→ 自动选择片段<br>" +
+服务器已经成功收到你的电影。
 
-"→ AI配音<br>" +
+下一阶段：
 
-"→ 自动字幕<br>" +
+🎵 提取电影音频
+↓
+🗣️ AI语音识别
+↓
+📝 获得完整对白
+↓
+🧠 AI分析剧情
+↓
+✍️ 自动生成电影解说稿
+↓
+🎙️ AI配音
+↓
+🎬 自动剪辑`;
 
-"→ 输出MP4";
+  }
 
+  catch(error){
+
+    console.error(error);
+
+    status.innerText =
+      "❌ 视频上传失败";
+
+    script.value =
+      "错误：\n\n" +
+      error.message;
+
+  }
 
 }
-catch(error){
-
-
-console.error(error);
-
-
-status.innerText =
-"❌ AI生成失败";
-
-
-script.value =
-"错误：\n\n" +
-error.message;
-
-
-}
-
-}
-
-
-</script>
-
-</body>
-</html>
